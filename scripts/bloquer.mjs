@@ -52,8 +52,10 @@ if (opts.aide) {
 
 const wanted = opts.plateformes.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
   .map(s => NETS.find(n => n.toLowerCase() === s) ?? (console.error(`Plateforme inconnue : ${s}`), process.exit(1)));
+if (!/^\d+$/.test(opts.cartes)) { console.error(`--cartes attend un nombre entier (0 = sans limite), pas « ${opts.cartes} ».`); process.exit(1); }
+if (!/^\d+(\.\d+)?$/.test(opts.pause)) { console.error(`--pause attend un nombre de secondes, pas « ${opts.pause} ».`); process.exit(1); }
 const maxCards = Number(opts.cartes) || Infinity;
-const pauseMs = Math.max(0, Number(opts.pause) || 0) * 1000;
+const pauseMs = Number(opts.pause) * 1000;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const STOP = new Set(['CONNEXION_REQUISE', 'LIMITE_PLATEFORME', 'VERIFICATION_SECURITE']);
 
@@ -331,7 +333,7 @@ main: while (cardsDone < maxCards && cardsSeen < 500) {
   const card = await readCard(site);
   if (!card.carte) { stopped = 'carte introuvable sur le site'; break; }
   cardsSeen++;
-  let blockedHere = 0;
+  let blockedHere = 0, openedHere = 0;
 
   for (const net of wanted) {
     const r = card.reseaux[net];
@@ -344,7 +346,8 @@ main: while (cardsDone < maxCards && cardsSeen < 500) {
 
     // Vrai clic sur le bouton de la carte : il ouvre le profil dans un nouvel onglet
     // et prévient le site qu'un blocage est en cours.
-    const link = site.locator(`a[aria-label=${JSON.stringify(r.label)}]`);
+    const q = JSON.stringify(r.label);
+    const link = site.locator(`a[aria-label=${q}], button[aria-label=${q}]`).first();
     let page;
     try {
       [page] = await Promise.all([ctx.waitForEvent('page', { timeout: 10000 }), link.click()]);
@@ -354,6 +357,7 @@ main: while (cardsDone < maxCards && cardsSeen < 500) {
       continue;
     }
 
+    openedHere++;
     let code;
     if (opts.essai) code = 'ESSAI';
     else code = await runBlocker(page, BLOCKERS[net]);
@@ -377,7 +381,8 @@ main: while (cardsDone < maxCards && cardsSeen < 500) {
     blockedHere++;
   }
 
-  if (blockedHere) cardsDone++;
+  // En mode essai rien n'est bloqué : on compte les cartes dont un profil a été ouvert.
+  if (blockedHere || (opts.essai && openedHere)) cardsDone++;
   if (cardsDone >= maxCards) break;
   if (!(await nextCard(site, card.carte))) { stopped ??= 'plus de carte à traiter'; break; }
 }

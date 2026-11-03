@@ -53,7 +53,7 @@ Si l'utilisateur a déjà répondu à ces questions dans sa demande, ne les repo
 
 ## Mode rapide (par défaut)
 
-Si ton outil de navigateur sait exécuter du JavaScript dans la page (`javascript_tool` pour Claude in Chrome, `browser_evaluate` pour Playwright), **lis [references/mode-rapide.md](references/mode-rapide.md) et utilise ses scripts**. Il existe des scripts pour Instagram, Facebook et YouTube : environ 4 appels par plateforme, sans capture d'écran. La boucle ci-dessous sert de mode de secours, et pour X, TikTok et LinkedIn. Les règles de prudence et le bilan s'appliquent dans les deux modes.
+Si ton outil de navigateur sait exécuter du JavaScript dans la page (`javascript_tool` pour Claude in Chrome, `browser_evaluate` pour Playwright), **lis [references/mode-rapide.md](references/mode-rapide.md) et utilise ses scripts**. Il existe des scripts pour Instagram, Facebook, TikTok et YouTube : environ 4 appels par plateforme, sans capture d'écran. La boucle ci-dessous sert de mode de secours, et pour X et LinkedIn. Les règles de prudence et le bilan s'appliquent dans les deux modes.
 
 ## Boucle pour chaque carte (mode capture d'écran)
 
@@ -105,12 +105,20 @@ Sur YouTube, bloquer s'appelle **« Masquer l'utilisateur sur ma chaîne »** : 
 
 Si l'utilisateur veut surtout ne plus voir les vidéos de la chaîne, il faut plutôt « Ne pas recommander la chaîne », dans le menu « ... » d'une de ses vidéos. Le site ne compte pas ce choix comme un blocage.
 
-### X, TikTok, LinkedIn (pas encore testés)
+### TikTok (testé)
+
+1. Sur le profil, clique sur le bouton **« ... »** à droite de « Suivre », « Message » et du bouton de partage. Son libellé d'accessibilité est « Actions ».
+2. Le menu propose « Signaler » et « Bloquer ». Clique sur **« Bloquer »**, surtout pas « Signaler ».
+3. La fenêtre « Bloquer <pseudo> (<Nom>) ? » s'ouvre. Clique sur le bouton rouge **« Bloquer »**, pas sur « Annuler ».
+4. Le bouton « Suivre » devient « Débloquer » : le blocage est fait.
+
+Si le profil affiche déjà « Débloquer » à la place de « Suivre », il est déjà bloqué : ne déclare rien.
+
+### X, LinkedIn (pas encore testés)
 
 Le guide du site (https://www.onbloquelextremedroite.fr/comment-bloquer-sur-instagram) donne ces indications :
 
 - **X** : sur le profil, les trois points, puis « Bloquer @pseudo ».
-- **TikTok** : sur le profil, l'icône de partage ou les trois points, puis « Bloquer ».
 - **LinkedIn** : le guide n'en parle pas. Sur un profil de personne, c'est en général « Plus », puis « Signaler / Bloquer », puis « Bloquer ». LinkedIn ne permet pas de bloquer une page d'entreprise ou de média. Dans ce cas, passe la plateforme et indique « non bloquable » dans le bilan.
 
 Le guide peut être en retard sur les applications : pour YouTube, il parle de « Bloquer l'utilisateur » alors que le libellé réel est « Masquer l'utilisateur sur ma chaîne ».

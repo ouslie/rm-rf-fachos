@@ -5,6 +5,7 @@ Au lieu de faire une capture d'écran avant chaque clic, l'agent exécute de pet
 Testé en vrai le 3 novembre 2026 avec Claude in Chrome :
 - Instagram : parcours complet d'un seul coup, en 37 secondes par carte.
 - Facebook et YouTube : chaque étape validée une par une.
+- TikTok : parcours vérifié à la main ; le script reprend les mêmes boutons (`data-e2e="user-more"`, puis « Bloquer », puis « Bloquer »).
 
 L'outil qui exécute ces scripts dépend de l'agent :
 
@@ -76,14 +77,16 @@ await (async () => {
   await waitFor(() => document.querySelector('header'), 8000);
   if (/accounts\/login/.test(location.href) || document.querySelector('input[name="password"]')) return 'CONNEXION_REQUISE';
   if (/Cette page n.est pas disponible|Sorry, this page isn.t available/i.test(body())) return 'PROFIL_INTROUVABLE';
-  if (btn('Débloquer')) return 'DEJA_BLOQUE';
-
+  // On attend que le profil soit affiché avant de chercher « Débloquer ».
   const opt = await waitFor(() => document.querySelector('header svg[aria-label="Options"]') || document.querySelector('svg[aria-label="Options"]'));
+  if (btn('Débloquer') || btn('Unblock')) return 'DEJA_BLOQUE';
   if (!opt) return 'OPTIONS_INTROUVABLE';
   (opt.closest('[role="button"], button') || opt.parentElement).click();
 
-  const b1 = await waitFor(() => btn('Bloquer'));
+  // Sur un compte déjà bloqué, le menu propose « Débloquer » au lieu de « Bloquer ».
+  const b1 = await waitFor(() => btn('Bloquer') || btn('Block') || btn('Débloquer') || btn('Unblock'));
   if (!b1) return 'MENU_BLOQUER_INTROUVABLE';
+  if (/^(Débloquer|Unblock)$/.test(b1.textContent.trim())) { btn('Annuler')?.click(); return 'DEJA_BLOQUE'; }
   b1.click();
 
   // Le titre est « Bloquer <pseudo> ? », avec une espace insécable avant le « ? ».
@@ -115,7 +118,8 @@ await (async () => {
 
   await waitFor(() => document.querySelector('[role="main"]'), 8000);
   if (document.querySelector('input[name="pass"]') || /\/login/.test(location.href)) return 'CONNEXION_REQUISE';
-  if (/Ce contenu n.est pas disponible|This content isn.t available/i.test(body())) return 'PROFIL_INTROUVABLE';
+  // Une Page déjà bloquée s'affiche aussi comme « contenu indisponible ».
+  if (/Ce contenu n.est pas disponible|This content isn.t available/i.test(body())) return 'INDISPONIBLE';
 
   const opt = await waitFor(() => [...document.querySelectorAll('[aria-label]')].find(e => vis(e) && /voir plus d.options$|^Voir plus d.options|See more options/i.test(e.getAttribute('aria-label'))));
   if (!opt) return 'OPTIONS_INTROUVABLE';
@@ -197,13 +201,50 @@ N'utilise jamais « Bloquer la chaîne pour les enfants » (c'est du contrôle p
 
 - `BLOQUE` : continue.
 - `BLOQUE_NON_VERIFIE` (YouTube) : fais une capture d'écran pour vérifier avant de déclarer.
-- `DEJA_BLOQUE` ou `PROFIL_INTROUVABLE` : ferme l'onglet, ne déclare rien et passe à la suite.
-- `CONNEXION_REQUISE` ou `LIMITE_PLATEFORME` : **arrête tout** et préviens l'utilisateur.
+- `DEJA_BLOQUE`, `INDISPONIBLE` (Facebook : sans doute déjà bloqué, ou supprimé) ou `PROFIL_INTROUVABLE` : ferme l'onglet, ne déclare rien et passe à la suite.
+- `CONNEXION_REQUISE`, `LIMITE_PLATEFORME` ou `VERIFICATION_SECURITE` : **arrête tout** et préviens l'utilisateur.
 - Tout autre code : fais une capture d'écran et termine l'étape en mode capture d'écran. Si l'état reste incertain, ne déclare rien.
+
+## Script : bloquer-tiktok
+
+Parcours vérifié à la main le 3 novembre 2026 : « ... » (libellé « Actions »), puis « Bloquer », puis le bouton rouge « Bloquer ». TikTok recharge parfois la page juste après l'ouverture : si l'outil renvoie une erreur de contexte détruit, attends 2 secondes et relance le script.
+
+```js
+await (async () => {
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const vis = e => e && e.getClientRects().length > 0;
+  const waitFor = async (fn, ms = 6000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { const r = fn(); if (r) return r; await sleep(150); } return null; };
+  const body = () => document.body.innerText;
+  const follow = () => document.querySelector('[data-e2e="follow-button"]');
+
+  await waitFor(() => document.querySelector('[data-e2e="user-title"]') || /Impossible de trouver ce compte|Couldn.t find this account/i.test(body()), 10000);
+  if (document.querySelector('#captcha-verify-container, [id*="captcha"]')) return 'VERIFICATION_SECURITE';
+  if (/Impossible de trouver ce compte|Couldn.t find this account/i.test(body())) return 'PROFIL_INTROUVABLE';
+  if (vis(document.querySelector('[data-e2e="top-login-button"]'))) return 'CONNEXION_REQUISE';
+  if (/^Débloquer|^Unblock/.test(follow()?.textContent.trim() || '')) return 'DEJA_BLOQUE';
+
+  const more = await waitFor(() => document.querySelector('[data-e2e="user-more"]'));
+  if (!more) return 'OPTIONS_INTROUVABLE';
+  more.click();
+
+  const item = await waitFor(() => [...document.querySelectorAll('[role="button"]')].find(e => vis(e) && /^(Bloquer|Block)$/.test(e.textContent.trim())));
+  if (!item) return 'MENU_BLOQUER_INTROUVABLE';
+  item.click();
+
+  const ok = await waitFor(() => [...document.querySelectorAll('button')].find(e => vis(e) && e !== item && /^(Bloquer|Block)$/.test(e.textContent.trim()) && e.closest('[role="dialog"], [class*="Modal"], [class*="modal"]')));
+  if (!ok) return 'CONFIRMATION_INTROUVABLE';
+  ok.click();
+
+  const done = await waitFor(() => /^Débloquer|^Unblock/.test(follow()?.textContent.trim() || '') || /Réessaie plus tard|Réessayez plus tard|Try again later|trop rapidement/i.test(body()) ? true : null, 8000);
+  if (!done) return 'RESULTAT_INCONNU';
+  if (!/^Débloquer|^Unblock/.test(follow()?.textContent.trim() || '')) return 'LIMITE_PLATEFORME';
+  return 'BLOQUE';
+})()
+```
 
 ## Autres plateformes
 
-Il n'y a pas encore de script testé pour X, TikTok ou LinkedIn. Utilise le mode capture d'écran pour celles-là, en t'aidant des indications de SKILL.md. Quand un parcours a été vérifié en vrai, on peut en tirer un script sur le modèle de bloquer-facebook.
+Il n'y a pas encore de script testé pour X ou LinkedIn. Utilise le mode capture d'écran pour celles-là, en t'aidant des indications de SKILL.md. Quand un parcours a été vérifié en vrai, on peut en tirer un script sur le modèle de bloquer-facebook.
 
 ## Script : déclarer (site)
 

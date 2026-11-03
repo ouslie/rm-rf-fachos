@@ -31,7 +31,7 @@ Il passe ensuite à la carte suivante. Si une plateforme n'a pas de compte réf�
 | Plateforme | État |
 | --- | --- |
 | Instagram, Facebook, YouTube | ✅ testé (mode rapide) |
-| TikTok | 🧪 testé une fois à la main ; l'agent lit l'écran à chaque étape |
+| TikTok | ✅ parcours vérifié à la main (script du mode rapide à confirmer sur plusieurs cartes) |
 | X, LinkedIn | 🧪 pas encore testé : l'agent lit l'écran à chaque étape |
 
 Il s'arrête de lui-même dans ces cas :
@@ -61,6 +61,7 @@ npm run bloquer -- --cartes 10 --plateformes instagram,facebook,tiktok,youtube
 
 - Les connexions restent enregistrées dans un profil Chrome à part (`~/.rm-rf-fachos/profil`). Votre Chrome habituel n'est pas touché. Le script ne saisit jamais d'identifiants.
 - Plateformes gérées : Instagram, Facebook, TikTok, YouTube. X et LinkedIn sont passés.
+- YouTube : Google refuse souvent la connexion dans une fenêtre pilotée par Playwright (« ce navigateur n'est peut-être pas sécurisé »). Dans ce cas, retirez `youtube` de `--plateformes` et passez par l'agent dans votre Chrome habituel pour YouTube.
 - Le script laisse 4 secondes entre deux blocages (`--pause`). Il s'arrête net sur « Action bloquée », une demande de connexion ou une vérification de sécurité.
 - `--essai` ouvre les profils sans rien bloquer ni déclarer, pour vérifier que tout marche.
 - Ctrl+C arrête le script et affiche quand même le bilan.
