@@ -46,6 +46,23 @@ Il ne déclare un blocage sur le site que si ce blocage a réellement réussi.
 | --- | --- |
 | [skills/rm-rf-fachos/SKILL.md](skills/rm-rf-fachos/SKILL.md) | La procédure complète, au format standard des skills d'agent |
 | [AGENTS.md](AGENTS.md) | Le point d'entrée lu par Codex, Cursor et la plupart des agents |
+| [scripts/bloquer.mjs](scripts/bloquer.mjs) | La version script Playwright, sans agent |
+
+## Sans agent IA : le script Playwright (le plus rapide)
+
+Un script Node pilote Chrome tout seul, sans agent : quelques secondes par carte au lieu d'une minute ou plus. Il faut [Node.js](https://nodejs.org/) et Google Chrome.
+
+```bash
+npm install
+npm run connexion          # 1re fois : connectez-vous vous-même à chaque plateforme, puis Entrée
+npm run bloquer -- --cartes 10 --plateformes instagram,facebook,tiktok,youtube
+```
+
+- Les connexions restent enregistrées dans un profil Chrome à part (`~/.rm-rf-fachos/profil`). Votre Chrome habituel n'est pas touché. Le script ne saisit jamais d'identifiants.
+- Plateformes gérées : Instagram, Facebook, TikTok, YouTube. X et LinkedIn sont passés.
+- Le script laisse 4 secondes entre deux blocages (`--pause`). Il s'arrête net sur « Action bloquée », une demande de connexion ou une vérification de sécurité.
+- `--essai` ouvre les profils sans rien bloquer ni déclarer, pour vérifier que tout marche.
+- Ctrl+C arrête le script et affiche quand même le bilan.
 
 ## Pas développeur ? Le plus simple : l'extension Claude dans Chrome
 
