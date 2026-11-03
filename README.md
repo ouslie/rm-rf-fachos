@@ -31,7 +31,8 @@ Il passe ensuite à la carte suivante. Si une plateforme n'a pas de compte réf�
 | Plateforme | État |
 | --- | --- |
 | Instagram, Facebook, YouTube | ✅ testé (mode rapide) |
-| X, TikTok, LinkedIn | 🧪 pas encore testé : l'agent lit l'écran à chaque étape |
+| TikTok | 🧪 testé une fois à la main ; l'agent lit l'écran à chaque étape |
+| X, LinkedIn | 🧪 pas encore testé : l'agent lit l'écran à chaque étape |
 
 Il s'arrête de lui-même dans ces cas :
 
